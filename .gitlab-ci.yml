@@ -1,0 +1,5 @@
+default:
+  image: debian:stable
+  tags: [ generic ]
+  script:
+    - echo "It works!"
