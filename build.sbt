@@ -3,7 +3,7 @@ assignment := "recfun"
 name := course.value + "-" + assignment.value
 testSuite := "recfun.RecFunSuite"
 
-scalaVersion := "0.19.0-bin-20190917-d821081-NIGHTLY"
+scalaVersion := "0.19.0-bin-20190918-dd68eb8-NIGHTLY"
 
 scalacOptions ++= Seq("-language:implicitConversions", "-deprecation")
 
