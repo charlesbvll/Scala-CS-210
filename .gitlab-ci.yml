@@ -22,7 +22,7 @@ grade:
   tags:
     - cs210
   image:
-    name: registry.gitlab.com/fnux/cs210-grading-images/progfun1-recfun
+    name: registry.gitlab.com/fnux/cs210-grading-images/progfun1-recfun:20190919-916bf8892e34b9d4118da077025ca92be1be1d48
     entrypoint: [""]
   allow_failure: true
   before_script:
@@ -32,5 +32,7 @@ grade:
     - cd /grader
     - /grader/grade > result.json
     - cat result.json | /grader/feedback-printer
-    # 'Fail' if the student did not get the full grade.
-    - cat result.json | grep "10.00 out of 10.00 in our tests" > /dev/null
+  artifacts:
+    expire_in: 7 days
+    paths:
+      - /grader/result.json
