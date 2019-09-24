@@ -53,7 +53,7 @@ object StudentTasks extends AutoPlugin {
       throw new MessageOnlyException(s"Could not find tests JarFile: $testSuiteJar")
     }
 
-    val classPath = s"${(Test / dependencyClasspath).value.map(_.data).mkString(":")}:$testSuiteJar"
+    val classPath = s"${(Test / dependencyClasspath).value.map(_.data).mkString(File.pathSeparator)}${File.pathSeparator}$testSuiteJar"
     val junitProcess =
       Fork.java.fork(
         ForkOptions(),

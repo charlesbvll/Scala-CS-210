@@ -30,9 +30,4 @@ grade:
     - cp submission.jar /shared/submission/submission.jar
   script:
     - cd /grader
-    - /grader/grade > result.json
-    - cat result.json | /grader/feedback-printer
-  artifacts:
-    expire_in: 7 days
-    paths:
-      - /grader/result.json
+    - /grader/grade | /grader/feedback-printer
