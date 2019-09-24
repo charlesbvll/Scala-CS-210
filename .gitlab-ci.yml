@@ -1,0 +1,33 @@
+# This configuration is not used for the final grading, you can change it if
+# you know what you're doing.
+
+stages:
+  - build
+  - grade
+
+compile:
+  stage: build
+  image: lampepfl/moocs-dotty:2019-09-17-2
+  tags:
+    - cs210
+  script:
+    - sbt packageSubmission
+  artifacts:
+    expire_in: 1 day
+    paths:
+      - submission.jar
+
+grade:
+  stage: grade
+  tags:
+    - cs210
+  image:
+    name: registry.gitlab.com/fnux/cs210-grading-images/progfun1-streams:20191030-8c9964d741565622fe075933cb0569e66dff8a25
+    entrypoint: [""]
+  allow_failure: true
+  before_script:
+    - mkdir -p /shared/submission/
+    - cp submission.jar /shared/submission/submission.jar
+  script:
+    - cd /grader
+    - /grader/grade | /grader/feedback-printer
