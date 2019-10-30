@@ -7,7 +7,7 @@ stages:
 
 compile:
   stage: build
-  image: lampepfl/moocs-dotty:2019-09-17-2
+  image: lampepfl/moocs-dotty:2019-10-16
   except:
     - tags
   tags:
