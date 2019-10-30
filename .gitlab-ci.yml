@@ -8,6 +8,8 @@ stages:
 compile:
   stage: build
   image: lampepfl/moocs-dotty:2019-09-17-2
+  except:
+    - tags
   tags:
     - cs210
   script:
@@ -19,6 +21,8 @@ compile:
 
 grade:
   stage: grade
+  except:
+    - tags
   tags:
     - cs210
   image:
