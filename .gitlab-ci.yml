@@ -22,7 +22,7 @@ grade:
   tags:
     - cs210
   image:
-    name: registry.gitlab.com/fnux/cs210-grading-images/progfun1-streams:20191030-8c9964d741565622fe075933cb0569e66dff8a25
+    name: registry.gitlab.com/fnux/cs210-grading-images/progfun2-streams:20191030-43a7371aecb1bee74b8e4c3b0aba175f3ff4d0c6
     entrypoint: [""]
   allow_failure: true
   before_script:
