@@ -8,20 +8,21 @@ import scala.util.Try
 // render values to `String` JSON blobs
 
 /**
- * Parse a JSON document contained in a `String` value into a `Json` value
+ * Parse a JSON document contained in a `String` value into a `Json` value, returns
+ * `None` in case the supplied `s` value is not a valid JSON document.
  */
-def parseJson(s: String): Try[Json] = Parser.parseFromString[Json](s)
+def parseJson(s: String): Option[Json] = Parser.parseFromString[Json](s).toOption
 
 /**
   * Parse the JSON value from the supplied `s` parameter, and then try to decode
   * it as a value of type `A` using the given `decoder`.
   *
-  * Returns a failure if JSON parsing failed, or if decoding failed.
+  * Returns `None` if JSON parsing failed, or if decoding failed.
   */
-def parseAndDecode[A](s: String)(given decoder: Decoder[A]): Try[A] =
+def parseAndDecode[A](s: String)(given decoder: Decoder[A]): Option[A] =
   for {
-     json <- parseJson(s)
-    a    <- decoder.decode(json).toRight(new Exception("Decoding failed")).toTry
+    json <- parseJson(s)
+    a    <- decoder.decode(json)
   } yield a
 
 /**

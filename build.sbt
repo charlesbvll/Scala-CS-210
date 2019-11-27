@@ -12,3 +12,5 @@ libraryDependencies ++= Seq(
 )
 
 testOptions in Test += Tests.Argument(TestFrameworks.JUnit, "-a", "-v", "-s")
+
+initialCommands in console := """import codecs.{_, given}"""
