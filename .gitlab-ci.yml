@@ -18,3 +18,20 @@ compile:
     expire_in: 1 day
     paths:
       - submission.jar
+
+grade:
+  stage: grade
+  except:
+    - tags
+  tags:
+    - cs210
+  image:
+    name: registry.gitlab.com/fnux/cs210-grading-images/progfun2-codecs:20191027-dfbea8aed96096ed3af1cf1958549b97328d4c25
+    entrypoint: [""]
+  allow_failure: true
+  before_script:
+    - mkdir -p /shared/submission/
+    - cp submission.jar /shared/submission/submission.jar
+  script:
+    - cd /grader
+    - /grader/grade | /grader/feedback-printer
