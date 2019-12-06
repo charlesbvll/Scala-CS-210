@@ -7,7 +7,7 @@ stages:
 
 compile:
   stage: build
-  image: lampepfl/moocs-dotty:2019-10-16
+  image: registry.gitlab.com/fnux/cs210-grading-images/progfun2-interpreter-build:latest
   except:
     - tags
   tags:
