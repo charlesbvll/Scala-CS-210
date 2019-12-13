@@ -40,6 +40,13 @@ object RecursiveLanguage {
   /** Evaluates a progam e given a set of top level definition defs */
   def eval(e: Expr, defs: DefEnv): Expr =
     e match
+      case Empty => Empty
+      case Cons(head, tail) => Cons(eval(head, defs), eval(tail, defs))
+      case Match(scrutinee, caseEmpty,hd,tl, caseCons) => 
+        eval(scrutinee, defs) match
+          case Empty => eval(caseEmpty, defs)
+          case Cons(head, tail) => eval(caseCons, defs ++ Map (hd -> head, tl -> tail))
+          case _ => error("Not a list")
       case Constant(c) => e
       case Name(n) =>
         defs.get(n) match
@@ -97,21 +104,31 @@ object RecursiveLanguage {
           else
             // Otherwise, substitute in the function body anyway.
             Fun(param, subst(body, n, r))
-      case Empty => ???
-      case Cons(head, tail) => ???
+      case Empty => Empty
+      case Cons(head, tail) => Cons(subst(head, n, r), subst(tail, n, r))
       case Match(scrutinee, caseEmpty, headName, tailName, caseCons) =>
         if headName == n || tailName == n then
           // If n conflicts with headName or tailName, there cannot be a reference
           // to n in caseCons. Simply substite n by r in scrutinee and caseEmpty.
-          ???
+          Match(subst(scrutinee, n, r), subst(caseEmpty, n, r), headName, tailName, caseCons)
         else
           // If the free variables in r contain headName or tailName, the naive
-          // substitution would change their meaning to reference to pattern binds.
+          // substitution would change their meaning to reference to pattern binds
+          
+          val fvs = freeVars(r)
+          if fvs.contains(headName) || fvs.contains(tailName) then
+            // Perform alpha conversion in caseCons to eliminate the name collision.
+            val headName1 = differentName(headName, fvs)
+            val caseCons1 = alphaConvert(caseCons, headName, headName1)
 
-          // Perform alpha conversion in caseCons to eliminate the name collision.
-
+            val tailName1 = differentName(tailName,fvs)
+            val caseCons2 = alphaConvert(caseCons1, tailName, tailName1)
+            Match(scrutinee,caseEmpty, headName1, tailName1, subst(caseCons2,n,r))
+            
+          else
           // Otherwise, substitute in scrutinee, caseEmpty & caseCons anyway.
-          ???
+            Match(subst(scrutinee, n, r), subst(caseEmpty, n, r), headName, tailName, subst(caseCons, n, r))
+            
 
   def differentName(n: String, s: Set[String]): String =
     if s.contains(n) then differentName(n + "'", s)
@@ -126,7 +143,12 @@ object RecursiveLanguage {
       case IfNonzero(cond, trueE, falseE) => freeVars(cond) ++ freeVars(trueE) ++ freeVars(falseE)
       case Call(f, arg) => freeVars(f) ++ freeVars(arg)
       case Fun(param, body) => freeVars(body) - param
-      // TODO: Add cases for Empty, Cons & Match
+      case Empty => Set()
+      case Cons(head, tail) => freeVars(head) ++ freeVars(tail)
+      case Match(scrutinee, caseEmpty,headName,tailName, caseCons) => scrutinee match
+        case Empty => freeVars(caseEmpty)
+        case Cons(head, tail) => freeVars(scrutinee) ++ freeVars(caseEmpty) ++ freeVars(caseCons) 
+      
 
   /** Substitutes Name(n) by Name(m) in e. */
   def alphaConvert(e: Expr, n: String, m: String): Expr =
@@ -144,7 +166,11 @@ object RecursiveLanguage {
         // as these would reference param instead.
         if param == n then e
         else Fun(param, alphaConvert(body, n, m))
-      // TODO: Add cases for Empty, Cons & Match
+      case Empty => e
+      case Cons(head, tail) => Cons(alphaConvert(head, n,m), alphaConvert(tail, n,m))
+      case Match(scrutinee, caseEmpty,headName,tailName, caseCons) => 
+        if headName == n || tailName == n then Match(scrutinee, caseEmpty,headName,tailName, caseCons)
+        else Match(scrutinee, alphaConvert(caseEmpty,n,m),headName,tailName, alphaConvert(caseCons,n,m))
 
   case class EvalException(msg: String) extends Exception(msg)
 
@@ -170,6 +196,9 @@ object RecursiveLanguage {
         s"(if ${show(cond)} then ${show(caseTrue)} else ${show(caseFalse)})"
       case Call(f, arg) => show(f) + "(" + show(arg) + ")"
       case Fun(n, body) => s"($n => ${show(body)})"
+      case Empty => ""
+      case Cons(head, tail) => show(head) + "::" + show(tail)
+      case Match(scrutinee, caseEmpty, headName, tailName, caseCons) => show(scrutinee) + "Match " + "case Nil => " + show(caseEmpty) + "case " + headName + "::" + tailName + "=> " + show(caseCons)
 
   /** Pretty print top-level definition as a String. */
   def showEnv(env: Map[String, Expr]): String =
@@ -207,16 +236,26 @@ object RecursiveLanguage {
       Call(N("f"), Call(N("f"), N("x"))))),
 
     // TODO Implement map (see recitation session)
-    "map" -> Empty,
+    "map" -> Fun("ls", Fun("f", Match( Name("ls"), Empty, "x", "xs", Cons( Call(Name("f"), Name("x") ), Call( Call ( Name("map"), Name("xs") ), Name("f") ) )))),
 
     // TODO Implement gcd (see recitation session)
-    "gcd" -> Empty,
+    "gcd" -> Fun("a", Fun("b", IfNonzero( Name("b"), Call( Call ( Name("gcd"), Name ("b")), modulo ( Name("a") , Name("b"))), Name("a")))),
 
     // TODO Implement foldLeft (see recitation session)
-    "foldLeft" -> Empty,
+    "foldLeft" -> Fun("ls", Fun("acc", Fun("f", Match( Name("ls"), Name("acc"), "x", "xs" , 
+    Call(
+      Call(
+        Call( Name("foldLeft"), Name("xs")) , 
+        Call(Call(Name("f"), Name("acc")), Name("x"))
+      ), Name("f") 
+    )
+    )))),
 
     // TODO Implement foldRight (analogous to foldLeft, but operate right-to-left)
-    "foldRight" -> Empty,
+    "foldRight" -> Fun("ls", Fun("z", Fun("fold", Match( Name("ls"), Name("z"), "x", "xs" , 
+    Call(Call(Name("fold"), Name("x")), 
+    Call(Call(Call(Name("foldRight"), Name("xs")), Name("z")), Name("fold")))
+    )))),
   )
 
   def main(args: Array[String]): Unit =
